@@ -1,3 +1,20 @@
+# Fraktal Go Ethereum Fork
+
+## Current Changes
+
+1. Added Coroutines to the EVM thru the SPAWN and YIELD opcodes.
+  - Coroutine Queue exists within a ScopeContext, ie all corotines queued will execute within a contract call
+  - Used this article to help design the coroutines : https://abhinavsarkar.net/posts/implementing-co-3/
+  - Coroutine { Environment, Continuation } --> EVM Coroutine { Stack, PC }
+  - More info & Testing code can be found in `tests/coroutines/`
+
+## Future Things
+
+- Cross Contract Yield ( Allow YIELD and SPAWN to work between contract calls in call stack )
+- Channels
+
+---
+
 ## Go Ethereum
 
 Official Golang execution layer implementation of the Ethereum protocol.
