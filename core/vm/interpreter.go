@@ -17,6 +17,8 @@
 package vm
 
 import (
+	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -37,6 +39,31 @@ type ScopeContext struct {
 	Memory   *Memory
 	Stack    *Stack
 	Contract *Contract
+
+  CoroutineQueue []Coroutine
+}
+
+func (scope *ScopeContext) PushCoroutine(coroutine Coroutine) {
+  scope.CoroutineQueue = append(scope.CoroutineQueue, coroutine)
+}
+
+func (scope *ScopeContext) PopCoroutine() (Coroutine, error) {
+  if len(scope.CoroutineQueue) == 0 {
+    return Coroutine{}, errors.New("Coroutine queue is empty")
+  }
+  coroutine := scope.CoroutineQueue[0]
+  scope.CoroutineQueue = scope.CoroutineQueue[1:]
+  return coroutine, nil
+}
+
+func (scope *ScopeContext) AwaitTermination(interpreter *EVMInterpreter) {
+  coroutine, err := scope.PopCoroutine()
+  for err == nil {
+    // TODO: Propogate returns and errors?
+    coroutine.ExecuteCoroutine(interpreter, scope)
+
+    coroutine, err = scope.PopCoroutine()
+  }
 }
 
 // EVMInterpreter represents an EVM interpreter
@@ -133,6 +160,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			Memory:   mem,
 			Stack:    stack,
 			Contract: contract,
+      CoroutineQueue: []Coroutine{},
 		}
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
@@ -150,6 +178,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	// so that it get's executed _after_: the capturestate needs the stacks before
 	// they are returned to the pools
 	defer func() {
+    callContext.AwaitTermination(in)
 		returnStack(stack)
 	}()
 	contract.Input = input
@@ -238,5 +267,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		err = nil // clear stop token error
 	}
 
+  // Res is array of bytes located in scope.Memory
 	return res, err
 }
