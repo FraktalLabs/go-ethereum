@@ -23,6 +23,27 @@ evm --code 603d565b805b60018301811015602157808160200252fc5b6001810190506005565b5
 
 ### What is this doing?
 
+Essentially running this code in the EVM ( modified `printNumbers.yul` ) :
+
+```
+{
+  function printNums(start, end) {
+    for { let i := start } lt(i, add(end, 1)) { i := add(i, 1) }
+    {
+      mstore(mul(0x20, i), i)
+      yield
+    }
+  }
+
+  function main() {
+    spawn printNums(0x01, 0x03)
+    printNums(0x0b, 0xd)
+  }
+
+  return main()
+}
+```
+
 **Useful Links**
 - Using printNumbers function referenced in this article on building a language with coroutines : https://abhinavsarkar.net/posts/implementing-co-3/
 - View EVM bytecode more easily : https://ethervm.io/decompile
