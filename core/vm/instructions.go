@@ -823,11 +823,11 @@ func opYield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
   scope.PushCoroutine(coroutine)
 
   // Call the next coroutine
-  nextCoroutine, err := scope.PopCoroutine()
-  if err != nil {
-    return nil, err
-  }
-  nextCoroutine.ExecuteCoroutine(interpreter, scope)
+  //nextCoroutine, err := scope.PopCoroutine()
+  //if err != nil {
+  //  return nil, err
+  //}
+  //nextCoroutine.ExecuteCoroutine(interpreter, scope)
 
   return nil, errStopToken
 }

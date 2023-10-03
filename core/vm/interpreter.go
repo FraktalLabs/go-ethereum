@@ -178,7 +178,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	// so that it get's executed _after_: the capturestate needs the stacks before
 	// they are returned to the pools
 	defer func() {
-    callContext.AwaitTermination(in)
 		returnStack(stack)
 	}()
 	contract.Input = input
@@ -194,78 +193,100 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			}
 		}()
 	}
-	// The Interpreter main run loop (contextual). This loop runs until either an
-	// explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
-	// the execution of one of the operations or until the done flag is set by the
-	// parent context.
-	for {
-		if debug {
-			// Capture pre-execution values for tracing.
-			logged, pcCopy, gasCopy = false, pc, contract.Gas
-		}
-		// Get the operation from the jump table and validate the stack to ensure there are
-		// enough stack items available to perform the operation.
-		op = contract.GetOp(pc)
-		operation := in.table[op]
-		cost = operation.constantGas // For tracing
-		// Validate stack
-		if sLen := stack.len(); sLen < operation.minStack {
-			return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
-		} else if sLen > operation.maxStack {
-			return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
-		}
-		if !contract.UseGas(cost) {
-			return nil, ErrOutOfGas
-		}
-		if operation.dynamicGas != nil {
-			// All ops with a dynamic memory usage also has a dynamic gas cost.
-			var memorySize uint64
-			// calculate the new memory size and expand the memory to fit
-			// the operation
-			// Memory check needs to be done prior to evaluating the dynamic gas portion,
-			// to detect calculation overflows
-			if operation.memorySize != nil {
-				memSize, overflow := operation.memorySize(stack)
-				if overflow {
-					return nil, ErrGasUintOverflow
-				}
-				// memory is expanded in words of 32 bytes. Gas
-				// is also calculated in words.
-				if memorySize, overflow = math.SafeMul(toWordSize(memSize), 32); overflow {
-					return nil, ErrGasUintOverflow
-				}
-			}
-			// Consume the gas and return an error if not enough gas is available.
-			// cost is explicitly set so that the capture state defer method can get the proper cost
-			var dynamicCost uint64
-			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
-			cost += dynamicCost // for tracing
-			if err != nil || !contract.UseGas(dynamicCost) {
-				return nil, ErrOutOfGas
-			}
-			// Do tracing before memory expansion
-			if debug {
-				in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
-				logged = true
-			}
-			if memorySize > 0 {
-				mem.Resize(memorySize)
-			}
-		} else if debug {
-			in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
-			logged = true
-		}
-		// execute the operation
-		res, err = operation.execute(&pc, in, callContext)
-		if err != nil {
-			break
-		}
-		pc++
-	}
 
-	if err == errStopToken {
-		err = nil // clear stop token error
-	}
+  var coroutine Coroutine
+  // Coroutine queue loop
+  for {
+	  // The Interpreter main run loop (contextual). This loop runs until either an
+	  // explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
+	  // the execution of one of the operations or until the done flag is set by the
+	  // parent context.
+	  for {
+	  	if debug {
+	  		// Capture pre-execution values for tracing.
+	  		logged, pcCopy, gasCopy = false, pc, contract.Gas
+	  	}
+	  	// Get the operation from the jump table and validate the stack to ensure there are
+	  	// enough stack items available to perform the operation.
+	  	op = contract.GetOp(pc)
+
+	  	operation := in.table[op]
+	  	cost = operation.constantGas // For tracing
+	  	// Validate stack
+	  	if sLen := stack.len(); sLen < operation.minStack {
+	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
+	  	} else if sLen > operation.maxStack {
+	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
+	  	}
+	  	if !contract.UseGas(cost) {
+	  		return nil, ErrOutOfGas
+	  	}
+	  	if operation.dynamicGas != nil {
+	  		// All ops with a dynamic memory usage also has a dynamic gas cost.
+	  		var memorySize uint64
+	  		// calculate the new memory size and expand the memory to fit
+	  		// the operation
+	  		// Memory check needs to be done prior to evaluating the dynamic gas portion,
+	  		// to detect calculation overflows
+	  		if operation.memorySize != nil {
+	  			memSize, overflow := operation.memorySize(stack)
+	  			if overflow {
+	  				return nil, ErrGasUintOverflow
+	  			}
+	  			// memory is expanded in words of 32 bytes. Gas
+	  			// is also calculated in words.
+	  			if memorySize, overflow = math.SafeMul(toWordSize(memSize), 32); overflow {
+	  				return nil, ErrGasUintOverflow
+	  			}
+	  		}
+	  		// Consume the gas and return an error if not enough gas is available.
+	  		// cost is explicitly set so that the capture state defer method can get the proper cost
+	  		var dynamicCost uint64
+	  		dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
+	  		cost += dynamicCost // for tracing
+	  		if err != nil || !contract.UseGas(dynamicCost) {
+	  			return nil, ErrOutOfGas
+	  		}
+	  		// Do tracing before memory expansion
+	  		if debug {
+	  			in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+	  			logged = true
+	  		}
+	  		if memorySize > 0 {
+	  			mem.Resize(memorySize)
+	  		}
+	  	} else if debug {
+	  		in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+	  		logged = true
+	  	}
+	  	// execute the operation
+	  	res, err = operation.execute(&pc, in, callContext)
+	  	if err != nil {
+	  		break
+	  	}
+	  	pc++
+	  }
+
+	  if err == errStopToken {
+	  	err = nil // clear stop token error
+	  }
+
+    if err != nil {
+      break
+    }
+
+    coroutine, err = callContext.PopCoroutine()
+    if err != nil {
+      err = nil
+      break
+    }
+
+    // TODO: Propogate returns and errors?
+    //coroutine.ExecuteCoroutine(in, callContext)
+    stack = &coroutine.Stack
+    callContext.Stack = stack
+    pc = coroutine.PC
+  }
 
   // Res is array of bytes located in scope.Memory
 	return res, err
