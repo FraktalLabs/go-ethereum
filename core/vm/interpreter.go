@@ -56,16 +56,6 @@ func (scope *ScopeContext) PopCoroutine() (Coroutine, error) {
   return coroutine, nil
 }
 
-func (scope *ScopeContext) AwaitTermination(interpreter *EVMInterpreter) {
-  coroutine, err := scope.PopCoroutine()
-  for err == nil {
-    // TODO: Propogate returns and errors?
-    coroutine.ExecuteCoroutine(interpreter, scope)
-
-    coroutine, err = scope.PopCoroutine()
-  }
-}
-
 // EVMInterpreter represents an EVM interpreter
 type EVMInterpreter struct {
 	evm   *EVM
@@ -282,7 +272,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
     }
 
     // TODO: Propogate returns and errors?
-    //coroutine.ExecuteCoroutine(in, callContext)
     stack = &coroutine.Stack
     callContext.Stack = stack
     pc = coroutine.PC
