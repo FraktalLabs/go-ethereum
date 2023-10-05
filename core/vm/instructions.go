@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"errors"
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -573,6 +574,7 @@ func opSpawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
   if !scope.Contract.validJumpdest(&pos) {
     return nil, ErrInvalidJump
   }
+  log.Println("opSpawn:", pos.Uint64(), " ", scope.Stack)
   // Save coroutine to memory ( Stack, PC )
   coroutine := NewCoroutine(pos.Uint64(), *scope.Stack)
 
@@ -813,6 +815,88 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
 
 	interpreter.returnData = ret
 	return ret, nil
+}
+
+func opChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  //TODO: Check if push to stack is best for assigning / using channel
+  //TODO: Read parameter(s) from stack?)
+  log.Println("opChanCreate")
+  newChannel := NewChannel(3, 30, 30)
+  idx := len(scope.Channels)
+  scope.Channels = append(scope.Channels, newChannel)
+  scope.Stack.push(uint256.NewInt(uint64(idx)))
+  log.Println("opChanCreate done w/", scope.Stack.Data())
+
+  return nil, nil
+}
+
+func opChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  channelIdx, value := scope.Stack.pop(), scope.Stack.pop()
+  channel := &scope.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
+
+  log.Println("opChanSend", channelIdx.Uint64(), value.Uint64())
+
+  if len(channel.ReceiveQueue) == 0 {
+    if uint64(len(channel.Buffer)) < channel.BufferSize {
+      channel.Buffer = append(channel.Buffer, value)
+      log.Println("opChanSend done -- appended to buffer", channel.Buffer)
+      return nil, nil
+    } else {
+      if uint64(len(channel.SendQueue)) >= channel.SendQueueSize {
+        return nil, errors.New("Channel send queue is full")
+      }
+      newCoroutine := NewCoroutine(*pc + 1, *scope.Stack)
+      channel.SendQueue = append(channel.SendQueue, ChanSend{value, newCoroutine})
+      log.Println("opChanSend done -- appended to send queue", channel.SendQueue)
+      return nil, errStopToken
+    }
+  } else {
+    newCoroutine := NewCoroutine(*pc + 1, *scope.Stack)
+    scope.PushCoroutine(newCoroutine)
+    receiveCoroutine := channel.ReceiveQueue[0]
+    channel.ReceiveQueue = channel.ReceiveQueue[1:]
+    //TODO: Setup receiveCoroutine to run w/ value ( maybe add receiveCoroutine to front of main queue then errStopToken) 
+    receiveCoroutine.Stack.push(&value)
+    scope.CoroutineQueue = append([]Coroutine{receiveCoroutine}, scope.CoroutineQueue...)
+    log.Println("opChanSend done -- appended to main queue", scope.CoroutineQueue)
+    return nil, errStopToken
+  }
+
+  return nil, nil
+}
+
+func opChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  //TODO: Receive data from channel & push to stack
+  channelIdx := scope.Stack.pop()
+  channel := &scope.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
+
+  log.Println("opChanRecv", channelIdx.Uint64())
+
+  if len(channel.Buffer) == 0 {
+    log.Println("opChanRecv no buffer")
+    if uint64(len(channel.ReceiveQueue)) >= channel.ReceiveQueueSize {
+      return nil, errors.New("Channel receive queue is full")
+    }
+    newCoroutine := NewCoroutine(*pc + 1, *scope.Stack)
+    channel.ReceiveQueue = append(channel.ReceiveQueue, newCoroutine)
+    return nil, errStopToken
+  } else {
+    value := channel.Buffer[0]
+    channel.Buffer = channel.Buffer[1:]
+    scope.Stack.push(&value)
+    log.Println("opChanRecv done w/", scope.Stack.Data())
+    if len(channel.SendQueue) > 0 {
+      sendCoroutine, sendValue := channel.SendQueue[0].Coroutine, channel.SendQueue[0].Value
+      channel.SendQueue = channel.SendQueue[1:]
+      channel.Buffer = append(channel.Buffer, sendValue)
+      scope.PushCoroutine(sendCoroutine)
+      log.Println("opChanRecv popped sendCoroutine w/", sendCoroutine.PC, sendCoroutine.Stack.Data(), sendValue)
+    } else {
+      return nil, nil
+    }
+  }
+
+  return nil, nil
 }
 
 func opYield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {

@@ -216,6 +216,9 @@ const (
 	RETURN       OpCode = 0xf3
 	DELEGATECALL OpCode = 0xf4
 	CREATE2      OpCode = 0xf5
+  CHANCREATE   OpCode = 0xf6
+  CHANSEND     OpCode = 0xf7
+  CHANRECV     OpCode = 0xf8
 
 	STATICCALL   OpCode = 0xfa
   SPAWN        OpCode = 0xfb
@@ -306,7 +309,6 @@ var opCodeToString = map[OpCode]string{
 	TLOAD:    "TLOAD",
 	TSTORE:   "TSTORE",
 	MCOPY:    "MCOPY",
-  SPAWN:    "SPAWN",
 	PUSH0:    "PUSH0",
 
 	// 0x60 range - pushes.
@@ -393,7 +395,11 @@ var opCodeToString = map[OpCode]string{
 	CALLCODE:     "CALLCODE",
 	DELEGATECALL: "DELEGATECALL",
 	CREATE2:      "CREATE2",
+  CHANCREATE:   "CHANCREATE",
+  CHANSEND:     "CHANSEND",
+  CHANRECV:     "CHANRECV",
 	STATICCALL:   "STATICCALL",
+  SPAWN:        "SPAWN",
   YIELD:        "YIELD",
 	REVERT:       "REVERT",
 	INVALID:      "INVALID",
@@ -449,7 +455,11 @@ var stringToOp = map[string]OpCode{
 	"BASEFEE":        BASEFEE,
 	"BLOBHASH":       BLOBHASH,
 	"DELEGATECALL":   DELEGATECALL,
+  "CHANCREATE":     CHANCREATE,
+  "CHANSEND":       CHANSEND,
+  "CHANRECV":       CHANRECV,
 	"STATICCALL":     STATICCALL,
+  "SPAWN":          SPAWN,
   "YIELD":          YIELD,
 	"CODESIZE":       CODESIZE,
 	"CODECOPY":       CODECOPY,
@@ -481,7 +491,6 @@ var stringToOp = map[string]OpCode{
 	"TLOAD":          TLOAD,
 	"TSTORE":         TSTORE,
 	"MCOPY":          MCOPY,
-  "SPAWN":          SPAWN,
 	"PUSH0":          PUSH0,
 	"PUSH1":          PUSH1,
 	"PUSH2":          PUSH2,

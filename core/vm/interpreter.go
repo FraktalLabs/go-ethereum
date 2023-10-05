@@ -41,6 +41,7 @@ type ScopeContext struct {
 	Contract *Contract
 
   CoroutineQueue []Coroutine
+  Channels []Channel
 }
 
 func (scope *ScopeContext) PushCoroutine(coroutine Coroutine) {

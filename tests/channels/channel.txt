@@ -1,0 +1,78 @@
+;; Jump to the main program
+PUSH 0x15
+JUMP
+
+
+
+;; Worker Function
+JUMPDEST
+PUSH 0x00
+MSTORE
+JUMP
+
+;; Worker Loop
+JUMPDEST
+
+;; Receive message from channel
+DUP1
+CHANRECV
+
+;; Call the worker function w/ received message
+PUSH 0x11
+SWAP1
+PUSH 0x03
+JUMP
+
+;; Rerun the worker loop
+JUMPDEST
+PUSH 0x08
+JUMP
+
+
+;; Main program
+JUMPDEST
+
+;; Create a message channel
+CHANCREATE
+
+;; Spawn worker -- Todo: first push to stop dest
+PUSH 0x22
+DUP2
+PUSH 0x08
+SPAWN
+;; Pop off args & jump dest
+POP
+POP
+;; Setup stop at end of spawn -- todo: first push post stop dest
+PUSH 0x24
+JUMP
+JUMPDEST
+STOP
+JUMPDEST
+
+;; Send 5 ( max + 2 ) messages to the worker
+PUSH 0x42
+DUP2
+CHANSEND
+
+PUSH 0x43
+DUP2
+CHANSEND
+
+PUSH 0x44
+DUP2
+CHANSEND
+
+PUSH 0x45
+DUP2
+CHANSEND
+
+PUSH 0x46
+DUP2
+CHANSEND
+
+;; Return
+JUMPDEST
+PUSH 0x20
+PUSH 0x00
+RETURN
