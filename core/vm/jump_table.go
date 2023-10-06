@@ -1041,8 +1041,8 @@ func newFrontierInstructionSet() JumpTable {
     CHANCREATE: {
       execute:     opChanCreate,
       constantGas: GasSlowStep, // TODO
-      minStack:    minStack(0, 1),
-      maxStack:    maxStack(0, 1), // TODO
+      minStack:    minStack(1, 1),
+      maxStack:    maxStack(1, 1), // TODO
     },
     CHANSEND: {
       execute:     opChanSend,

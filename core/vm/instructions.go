@@ -818,10 +818,9 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
 }
 
 func opChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-  //TODO: Check if push to stack is best for assigning / using channel
-  //TODO: Read parameter(s) from stack?)
+  bufferSize := scope.Stack.pop()
   log.Println("opChanCreate")
-  newChannel := NewChannel(3, 30, 30)
+  newChannel := NewChannel(bufferSize.Uint64(), 30, 30)
   idx := len(scope.Channels)
   scope.Channels = append(scope.Channels, newChannel)
   scope.Stack.push(uint256.NewInt(uint64(idx)))

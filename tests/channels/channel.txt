@@ -33,10 +33,11 @@ JUMP
 JUMPDEST
 
 ;; Create a message channel
+PUSH 0x03
 CHANCREATE
 
 ;; Spawn worker -- Todo: first push to stop dest
-PUSH 0x22
+PUSH 0x24
 DUP2
 PUSH 0x08
 SPAWN
@@ -44,7 +45,7 @@ SPAWN
 POP
 POP
 ;; Setup stop at end of spawn -- todo: first push post stop dest
-PUSH 0x24
+PUSH 0x26
 JUMP
 JUMPDEST
 STOP
