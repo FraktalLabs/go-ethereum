@@ -15,6 +15,7 @@ contract ChannelTest {
       workerFunction(val);
     }
 
+    // TODO
     //uint256 val <- 0x01;
     //val <- msgChannel;
   }

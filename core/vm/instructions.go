@@ -19,6 +19,7 @@ package vm
 import (
 	"errors"
 	"log"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -906,6 +907,26 @@ func opYield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
   scope.PushCoroutine(coroutine)
 
   return nil, errStopToken
+}
+
+func opClog(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  // Pop memory offset from stack.
+  offset := scope.Stack.pop()
+
+  // Get string length from offset in memory.
+  length := scope.Memory.GetPtr(int64(offset.Uint64()), 32)
+  // Convert length to uint64 from hex bytes array.
+  decodedLen := new(big.Int).SetBytes(length)
+
+  // Get string from offset + 32 in memory ( given length ).
+  str := scope.Memory.GetPtr(int64(offset.Uint64()) + 32, int64(decodedLen.Uint64()))
+  // Convert byte[] to string.
+  decodedStr := string(str)
+
+  // Console log string ( Clog )
+  log.Println("opClog : " + decodedStr)
+
+  return nil, nil
 }
 
 func opReturn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
