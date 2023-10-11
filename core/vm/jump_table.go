@@ -1068,6 +1068,12 @@ func newFrontierInstructionSet() JumpTable {
       minStack:    minStack(0, 0),
       maxStack:    maxStack(0, 0),
     },
+    CLOG: {
+      execute:     opClog,
+      constantGas: 1, //TODO
+      minStack:    minStack(1, 0),
+      maxStack:    maxStack(1, 0), //TODO: memory size? and take 2 args for full array
+    },
 		RETURN: {
 			execute:    opReturn,
 			dynamicGas: gasReturn,
