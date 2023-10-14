@@ -1,17 +1,27 @@
 # Fraktal Go Ethereum Fork
+For more info on Fraktal : https://github.com/FraktalLabs/fraktal#fraktal
 
 ## Current Changes
 
-1. Added Coroutines to the EVM thru the SPAWN and YIELD opcodes.
+1. Added Coroutines to the EVM thru the `SPAWN` and `YIELD` opcodes.
   - Coroutine Queue exists within a ScopeContext, ie all corotines queued will execute within a contract call
   - Used this article to help design the coroutines : https://abhinavsarkar.net/posts/implementing-co-3/
   - Coroutine { Environment, Continuation } --> EVM Coroutine { Stack, PC }
-  - More info & Testing code can be found in `tests/coroutines/`
+
+2. Added Channels to the EVM thru the `CHANCREATE`, `CHANSEND`, and `CHANRECV` opcodes.
+  - Channels allow coroutines to communicate messages / data
+  - Channels store coroutines in send & recv queues until their pair has been executed
+  - Channels are stored within a ScopeContext and accessed by Id in the EVM
+
+3. Added console / node logging with the `CLOG` opcode.
+  - Clog will print a string in the ScopeContext's Memory
+  - String encoding is the same as Solidity memory strings, clog takes mem pointer to str len
+  - Allows easy testing and development with evm binary
 
 ## Future Things
 
 - Cross Contract Yield ( Allow YIELD and SPAWN to work between contract calls in call stack )
-- Channels
+- Cross Contract Channels
 
 ---
 
