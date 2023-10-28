@@ -17,6 +17,8 @@
 package vm
 
 import (
+	"errors"
+	"log"
 	"math/big"
 	"sync/atomic"
 
@@ -86,6 +88,45 @@ type TxContext struct {
 	BlobHashes []common.Hash  // Provides information for BLOBHASH
 }
 
+type CallType string
+const (
+  CallTypeCall CallType = "CALL"
+  CallTypeCallCode CallType = "CALLCODE"
+  CallTypeDelegateCall CallType = "DELEGATECALL"
+  CallTypeStaticCall CallType = "STATICCALL"
+)
+
+type CallInfo struct {
+  //TODO: Just store contract w/ this styiff instead?
+  // Call information
+  Caller    common.Address // Provides information for CALLER
+  Address   common.Address // Provides information for ADDRESS
+  Input     []byte         // Provides information for CALLDATA
+  CallType  CallType       // Provides information for CALLTYPE
+  Snapshot  int            // Snapshot of the state
+  // Note: Value is not needed since it is transferred before the call execution
+
+  // Scope information
+  Scope     *ScopeContext  // Provides information for Call's SCOPE
+  PC        *uint64        // Provides information for PC
+}
+
+func NewCallInfo(caller common.Address, address common.Address, input []byte,
+                 callType CallType, snapshot int) *CallInfo {
+  return &CallInfo{
+    Caller: caller,
+    Address: address,
+    Input: input,
+    CallType: callType,
+    Snapshot: snapshot,
+  }
+}
+
+func (callInfo *CallInfo) AddScopeContext(scope *ScopeContext, pc *uint64) {
+  callInfo.Scope = scope
+  callInfo.PC = pc
+}
+
 // EVM is the Ethereum Virtual Machine base object and provides
 // the necessary tools to run a contract on the given state with
 // the provided context. It should be noted that any error
@@ -103,6 +144,11 @@ type EVM struct {
 	StateDB StateDB
 	// Depth is the current call stack
 	depth int
+  // Call Stack Info contains refs & data needed to stash coroutines
+  // TODO: use pointers or not?
+  callStackInfo []*CallInfo
+  // Coroutine Queue
+  coroutineQueue []EVMCoroutine
 
 	// chainConfig contains information about the current chain
 	chainConfig *params.ChainConfig
@@ -168,6 +214,21 @@ func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 	evm.chainRules = evm.chainConfig.Rules(num, blockCtx.Random != nil, timestamp)
 }
 
+func (evm *EVM) PushCoroutine(coroutine EVMCoroutine) {
+  evm.coroutineQueue = append(evm.coroutineQueue, coroutine)
+  log.Println("Pushed coroutine to queue : ", coroutine)
+  log.Println("Coroutine Queue : ", evm.coroutineQueue)
+}
+
+func (evm *EVM) PopCoroutine() (EVMCoroutine, error) {
+  if len(evm.coroutineQueue) == 0 {
+    return EVMCoroutine{}, errors.New("EVM Coroutine queue is empty")
+  }
+  coroutine := evm.coroutineQueue[0]
+  evm.coroutineQueue = evm.coroutineQueue[1:]
+  return coroutine, nil
+}
+
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
@@ -220,6 +281,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 
 	if isPrecompile {
+    //TODO: Can this call stack info
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -233,10 +295,40 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			// The depth-check is already done, and precompiles handled above
 			contract := NewContract(caller, AccountRef(addrCopy), value, gas)
 			contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
+      //TODO: Do for all other call types
+      //TODO: Why addrCopy?
+      callInfo := NewCallInfo(caller.Address(), addrCopy, input, CallTypeCall, snapshot)
+      evm.callStackInfo = append(evm.callStackInfo, callInfo)
 			ret, err = evm.interpreter.Run(contract, input, false)
+      evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
+      log.Println("Popped & Call Stack Info : ", evm.callStackInfo)
 			gas = contract.Gas
 		}
 	}
+
+  var coroutine EVMCoroutine
+  for {
+    log.Println("Coroutine Queue loop : ", err)
+    if err != errYieldToken || evm.depth > 0 {
+      // Only resume next coroutine if we are on top level call & yielding
+      log.Println("Not yielding token or depth > 0", err, evm.depth)
+      break
+    }
+
+    coroutine, err = evm.PopCoroutine()
+    if err != nil {
+      // Coroutine queue is empty
+      log.Println("Coroutine queue is empty")
+      err = nil
+      break
+    }
+
+    // TODO: Do i need to handle gas any particular way?
+    //       store contract object in coroutine?
+    ret, err = evm.CallResume(&coroutine)
+    log.Println("Coroutine CallResume finished : ", ret, err)
+  }
+
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
@@ -249,7 +341,30 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		//} else {
 		//	evm.StateDB.DiscardSnapshot(snapshot)
 	}
+
+
 	return ret, gas, err
+}
+
+// CallResume resumes the execution of a coroutine
+func (evm *EVM) CallResume(coroutine *EVMCoroutine) (ret []byte, err error) {
+  log.Println("CallResume : ", coroutine)
+  //TODO: Do different things based on coroutine call type
+  //TODO: Precompiles?
+
+  // Fail if we're trying to execute above the call depth limit
+  if evm.depth > int(params.CallCreateDepth) {
+    return nil, ErrDepth
+  }
+
+  // Resume Interpreter
+  evm.callStackInfo = append(evm.callStackInfo, coroutine.Coroutine[evm.depth])
+  ret, err = evm.interpreter.Resume(coroutine)
+  evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
+  log.Println("Coroutine loop Popped & Call Stack Info : ", evm.callStackInfo)
+  log.Println(ret, err)
+
+  return ret, err
 }
 
 // CallCode executes the contract associated with the addr with the given input

@@ -41,6 +41,10 @@ var (
 	// errStopToken is an internal token indicating interpreter loop termination,
 	// never returned to outside callers.
 	errStopToken = errors.New("stop token")
+
+  // errYieldToken is an info passing token indicating evm yielded call stack
+  // passed up to callers, but does not indicate any error for reverting.
+  errYieldToken = errors.New("yield token")
 )
 
 // ErrStackUnderflow wraps an evm error when the items on the stack less
