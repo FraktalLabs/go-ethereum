@@ -1068,6 +1068,12 @@ func newFrontierInstructionSet() JumpTable {
       minStack:    minStack(0, 0),
       maxStack:    maxStack(0, 0),
     },
+    XYIELD: {
+      execute:     opXyield,
+      constantGas: 1, //TODO: set this to something reasonable
+      minStack:    minStack(0, 0),
+      maxStack:    maxStack(0, 0),
+    },
     CLOG: {
       execute:     opClog,
       constantGas: 1, //TODO

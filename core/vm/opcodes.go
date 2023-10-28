@@ -207,6 +207,8 @@ const (
 	LOG3
 	LOG4
   CLOG
+  // TODO: Find a better place for these
+  XYIELD
 )
 
 // 0xf0 range - closures.
@@ -390,6 +392,8 @@ var opCodeToString = map[OpCode]string{
 	LOG4: "LOG4",
   CLOG: "CLOG",
 
+  XYIELD: "XYIELD",
+
 	// 0xf0 range - closures.
 	CREATE:       "CREATE",
 	CALL:         "CALL",
@@ -564,6 +568,7 @@ var stringToOp = map[string]OpCode{
 	"LOG3":           LOG3,
 	"LOG4":           LOG4,
   "CLOG":           CLOG,
+  "XYIELD":         XYIELD,
 	"CREATE":         CREATE,
 	"CREATE2":        CREATE2,
 	"CALL":           CALL,

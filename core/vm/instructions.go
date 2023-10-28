@@ -20,6 +20,7 @@ import (
 	"errors"
 	"log"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -710,6 +711,12 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
 
 	ret, returnGas, err := interpreter.evm.Call(scope.Contract, toAddr, args, gas, bigVal)
 
+  //TODO: Do for other call types
+  if err == errYieldToken {
+    // TODO: gas, return data, ...
+    return ret, err
+  }
+
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -890,10 +897,21 @@ func opYield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
   // Save current Environment as coroutine
   coroutine := NewCoroutine(*pc + 1, *scope.Stack)
 
-  // Push coroutine to the stack
+  // Push coroutine to the queue
   scope.PushCoroutine(coroutine)
 
   return nil, errStopToken
+}
+
+func opXyield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  // Save current Environment as coroutine ( full stack )
+  evmCoroutine := EVMCoroutine{
+    Coroutine: interpreter.evm.callStackInfo,
+  }
+  interpreter.evm.PushCoroutine(evmCoroutine)
+  log.Println("opXyield : " + strconv.FormatUint(*pc + 1, 10))
+
+  return nil, errYieldToken
 }
 
 func opClog(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {

@@ -23,6 +23,9 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/holiman/uint256"
+
+	log2 "log"
 )
 
 // Config are the configuration options for the Interpreter
@@ -152,6 +155,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			Stack:    stack,
 			Contract: contract,
       CoroutineQueue: []Coroutine{},
+      Channels: []Channel{},
 		}
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
@@ -165,6 +169,10 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		res     []byte // result of the opcode execution function
 		debug   = in.evm.Config.Tracer != nil
 	)
+  //TODO: cost?
+  in.evm.callStackInfo[len(in.evm.callStackInfo)-1].AddScopeContext(callContext, &pc)
+  log2.Println("CallStackInfo stored : ", in.evm.callStackInfo[len(in.evm.callStackInfo)-1])
+
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
 	// so that it get's executed _after_: the capturestate needs the stacks before
 	// they are returned to the pools
@@ -276,6 +284,192 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
     stack = &coroutine.Stack
     callContext.Stack = stack
     pc = coroutine.PC
+  }
+
+  // Res is array of bytes located in scope.Memory
+	return res, err
+}
+
+func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err error) {
+	// Increment the call depth which is restricted to 1024
+	in.evm.depth++
+	defer func() { in.evm.depth-- }()
+
+  // TODO
+	// Make sure the readOnly is only set if we aren't in readOnly yet.
+	// This also makes sure that the readOnly flag isn't removed for child calls.
+	//if readOnly && !in.readOnly {
+	//	in.readOnly = true
+	//	defer func() { in.readOnly = false }()
+	//}
+
+  // TODO
+	// Reset the previous call's return data. It's unimportant to preserve the old buffer
+	// as every returning call will return new data anyway.
+	// in.returnData = nil
+
+	var (
+    reentry     bool = true
+		op          OpCode        // current opcode
+		mem         = evmCoroutine.Coroutine[in.evm.depth-1].Scope.Memory
+		stack       = evmCoroutine.Coroutine[in.evm.depth-1].Scope.Stack
+		callContext = evmCoroutine.Coroutine[in.evm.depth-1].Scope
+    contract    = evmCoroutine.Coroutine[in.evm.depth-1].Scope.Contract
+		// For optimisation reason we're using uint64 as the program counter.
+		// It's theoretically possible to go above 2^64. The YP defines the PC
+		// to be uint256. Practically much less so feasible.
+		pc   = evmCoroutine.Coroutine[in.evm.depth-1].PC
+		cost uint64 // TODO
+// TODO
+//		// copies used by tracer
+//		pcCopy  uint64 // needed for the deferred EVMLogger
+//		gasCopy uint64 // for EVMLogger to log gas remaining before execution
+//		logged  bool   // deferred EVMLogger should ignore already logged steps
+		res     []byte // result of the opcode execution function
+//		debug   = in.evm.Config.Tracer != nil
+	)
+  //TODO: cost?
+  //in.evm.callStackInfo[len(in.evm.callStackInfo)-1].AddScopeContext(callContext, &pc)
+  //log2.Println("CallStackInfo stored : ", in.evm.callStackInfo[len(in.evm.callStackInfo)-1])
+
+	// Don't move this deferred function, it's placed before the capturestate-deferred method,
+	// so that it get's executed _after_: the capturestate needs the stacks before
+	// they are returned to the pools
+	defer func() {
+		returnStack(stack)
+	}()
+	//contract.Input = input
+
+  // TODO
+	//if debug {
+	//	defer func() {
+	//		if err != nil {
+	//			if !logged {
+	//				in.ev.Config.Tracer.CaptureState(pcCopy, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+	//			} else {
+	//				in.evm.Config.Tracer.CaptureFault(pcCopy, op, gasCopy, cost, callContext, in.evm.depth, err)
+	//			}
+	//		}
+	//	}()
+	//}
+
+  var coroutine Coroutine
+  // Coroutine queue loop
+  for {
+	  // The Interpreter main run loop (contextual). This loop runs until either an
+	  // explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
+	  // the execution of one of the operations or until the done flag is set by the
+	  // parent context.
+	  for {
+      // TODO
+	  	//if debug {
+	  	//	// Capture pre-execution values for tracing.
+	  	//	logged, pcCopy, gasCopy = false, pc, contract.Gas
+	  	//}
+	  	// Get the operation from the jump table and validate the stack to ensure there are
+	  	// enough stack items available to perform the operation.
+	  	op = contract.GetOp(*pc)
+
+	  	operation := in.table[op]
+
+      if !reentry {
+	  	cost = operation.constantGas // For tracing
+	  	// Validate stack
+	  	if sLen := stack.len(); sLen < operation.minStack {
+	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
+	  	} else if sLen > operation.maxStack {
+	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
+	  	}
+	  	if !contract.UseGas(cost) {
+	  		return nil, ErrOutOfGas
+	  	}
+	  	if operation.dynamicGas != nil {
+	  		// All ops with a dynamic memory usage also has a dynamic gas cost.
+	  		var memorySize uint64
+	  		// calculate the new memory size and expand the memory to fit
+	  		// the operation
+	  		// Memory check needs to be done prior to evaluating the dynamic gas portion,
+	  		// to detect calculation overflows
+	  		if operation.memorySize != nil {
+	  			memSize, overflow := operation.memorySize(stack)
+	  			if overflow {
+	  				return nil, ErrGasUintOverflow
+	  			}
+	  			// memory is expanded in words of 32 bytes. Gas
+	  			// is also calculated in words.
+	  			if memorySize, overflow = math.SafeMul(toWordSize(memSize), 32); overflow {
+	  				return nil, ErrGasUintOverflow
+	  			}
+	  		}
+	  		// Consume the gas and return an error if not enough gas is available.
+	  		// cost is explicitly set so that the capture state defer method can get the proper cost
+	  		var dynamicCost uint64
+	  		dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
+	  		cost += dynamicCost // for tracing
+	  		if err != nil || !contract.UseGas(dynamicCost) {
+	  			return nil, ErrOutOfGas
+	  		}
+	  		// Do tracing before memory expansion
+	  		//if debug {
+	  		//	in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+	  		//	logged = true
+	  		//}
+	  		if memorySize > 0 {
+	  			mem.Resize(memorySize)
+	  		}
+	  	}
+      //else if debug {
+	  	//	in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
+	  	//	logged = true
+	  	//}
+      }
+	  	// execute the operation
+      if reentry && in.evm.depth < len(evmCoroutine.Coroutine) {
+        // Re entry on a call operation
+        // TODO: Make this cleaner and better w/ different call types?
+        log2.Println("Re entry on a call operation")
+        res, err = in.evm.CallResume(evmCoroutine)
+        reentry = false
+        if err == errYieldToken {
+          return res, err
+        }
+        passed := uint256.NewInt(0)
+        if err == nil { passed = uint256.NewInt(1) }
+        callContext.Stack.push(passed)
+        in.returnData = res
+        // TODO: Handle like opCall?
+      } else if reentry && in.evm.depth == len(evmCoroutine.Coroutine) {
+        // Re entry on a yielding operation
+        // Do nothing and go to next operation
+        log2.Println("Re entry on a yielding operation")
+        reentry = false
+      } else {
+        res, err = operation.execute(pc, in, callContext)
+      }
+	  	if err != nil {
+	  		break
+	  	}
+	  	*pc++
+	  }
+
+	  if err == errStopToken {
+	  	err = nil // clear stop token error
+	  }
+
+    if err != nil {
+      break
+    }
+
+    coroutine, err = callContext.PopCoroutine()
+    if err != nil {
+      err = nil
+      break
+    }
+
+    // TODO: Propogate returns and errors?
+    stack = &coroutine.Stack
+    callContext.Stack = stack
+    pc = &coroutine.PC
   }
 
   // Res is array of bytes located in scope.Memory
