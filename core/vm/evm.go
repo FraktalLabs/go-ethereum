@@ -301,7 +301,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
       evm.callStackInfo = append(evm.callStackInfo, callInfo)
 			ret, err = evm.interpreter.Run(contract, input, false)
       evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
-      log.Println("Popped & Call Stack Info : ", evm.callStackInfo)
+      log.Println("Popped & Call Stack Info : ", err, evm.callStackInfo)
 			gas = contract.Gas
 		}
 	}
@@ -309,8 +309,8 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
   var coroutine EVMCoroutine
   for {
     log.Println("Coroutine Queue loop : ", err)
-    if err != errYieldToken || evm.depth > 0 {
-      // Only resume next coroutine if we are on top level call & yielding
+    if (err != errYieldToken && err != nil) || evm.depth > 0 {
+      // Only resume next coroutine if we are on top level call & yielding / stopped
       log.Println("Not yielding token or depth > 0", err, evm.depth)
       break
     }
@@ -358,6 +358,7 @@ func (evm *EVM) CallResume(coroutine *EVMCoroutine) (ret []byte, err error) {
   }
 
   // Resume Interpreter
+  log.Println("  Coroutine loop : ", coroutine.Coroutine[evm.depth])
   evm.callStackInfo = append(evm.callStackInfo, coroutine.Coroutine[evm.depth])
   ret, err = evm.interpreter.Resume(coroutine)
   evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]

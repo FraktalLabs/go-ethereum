@@ -213,6 +213,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	  	cost = operation.constantGas // For tracing
 	  	// Validate stack
 	  	if sLen := stack.len(); sLen < operation.minStack {
+        log2.Println("Stack underflow w/ op : ", op, "stack len : ", sLen, "minStack : ", operation.minStack)
 	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
 	  	} else if sLen > operation.maxStack {
 	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
@@ -353,6 +354,8 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
 	//	}()
 	//}
 
+  log2.Println("Resuming w/ memory size: ", mem.Len(), " and stack size: ", stack.len(), " and pc: ", &pc, "callContext: ", callContext)
+  log2.Println("Memory: ", mem.Data())
   var coroutine Coroutine
   // Coroutine queue loop
   for {
@@ -376,6 +379,7 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
 	  	cost = operation.constantGas // For tracing
 	  	// Validate stack
 	  	if sLen := stack.len(); sLen < operation.minStack {
+        log2.Println("Stack underflow w/ op : ", op, "stack len : ", sLen, "minStack : ", operation.minStack)
 	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
 	  	} else if sLen > operation.maxStack {
 	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
@@ -441,7 +445,12 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
       } else if reentry && in.evm.depth == len(evmCoroutine.Coroutine) {
         // Re entry on a yielding operation
         // Do nothing and go to next operation
-        log2.Println("Re entry on a yielding operation")
+        log2.Println("Re entry on a yielding operation w/ op : ", op)
+        // TODO: I dont like this
+        if !(op.String() == "YIELD" || op.String() == "XYIELD") {
+          log2.Println("Not a yielding operation, going back")
+          *pc-- // Go back since not a yielding operation
+        }
         reentry = false
       } else {
         res, err = operation.execute(pc, in, callContext)
