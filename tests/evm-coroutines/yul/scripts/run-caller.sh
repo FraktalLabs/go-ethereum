@@ -18,4 +18,13 @@ echo "Caller Contract binary: $CONTRACT_BIN"
 # Run the contract
 $EVM_BIN --code $CONTRACT_BIN run --prestate $GENESIS
 
+echo "Yield caller contract done.."
+
+# Compile the contract
+SPAWN_INNER_CALLER_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-inner-caller.yul | tail -n 1)
+echo "Spawn inner caller contract binary: $SPAWN_INNER_CALLER_BIN"
+
+# Run the contract
+$EVM_BIN --code $SPAWN_INNER_CALLER_BIN run --prestate $GENESIS
+
 rm $GENESIS

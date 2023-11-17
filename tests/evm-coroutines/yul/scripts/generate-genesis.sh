@@ -14,5 +14,9 @@ SOL_BIN=$WORK_DIR/../../../../solidity/build/solc/solc
 YIELD_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/yield-contract.yul | tail -n 1)
 echo "Yield contract code: $YIELD_BIN"
 
+SPAWN_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-contract.yul | tail -n 1)
+echo "Spawn contract code: $SPAWN_BIN"
+
 # Generate genesis json
 sed -e "s|<YIELD_CONTRACT_CODE>|0x$YIELD_BIN|" $GENESIS_TEMPLATE > $WORK_DIR/genesis.json
+sed -i -e "s|<SPAWN_CONTRACT_CODE>|0x$SPAWN_BIN|" $WORK_DIR/genesis.json
