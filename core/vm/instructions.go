@@ -934,6 +934,11 @@ func opXspawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
   return nil, nil
 }
 
+func opSpawnstop(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  log.Println("opSpawnstop : " + strconv.FormatUint(*pc, 10))
+  return nil, errYieldToken
+}
+
 func opClog(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   // Pop memory offset from stack.
   offset := scope.Stack.pop()

@@ -210,6 +210,7 @@ const (
   // TODO: Find a better place for these
   XYIELD
   XSPAWN
+  SPAWNSTOP
 )
 
 // 0xf0 range - closures.
@@ -395,6 +396,7 @@ var opCodeToString = map[OpCode]string{
 
   XYIELD: "XYIELD",
   XSPAWN: "XSPAWN",
+  SPAWNSTOP: "SPAWNSTOP",
 
 	// 0xf0 range - closures.
 	CREATE:       "CREATE",
@@ -572,6 +574,7 @@ var stringToOp = map[string]OpCode{
   "CLOG":           CLOG,
   "XYIELD":         XYIELD,
   "XSPAWN":         XSPAWN,
+  "SPAWNSTOP":      SPAWNSTOP,
 	"CREATE":         CREATE,
 	"CREATE2":        CREATE2,
 	"CALL":           CALL,
