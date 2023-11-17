@@ -11,10 +11,18 @@ EVM_BIN=$WORK_DIR/../../../build/bin/evm
 $SCRIPT_DIR/generate-genesis.sh
 
 # Compile code
-CALLER=$($EVM_BIN compile $WORK_DIR/caller.txt)
-echo "Caller : $CALLER"
+YIELD_CALLER=$($EVM_BIN compile $WORK_DIR/caller-yield.txt)
+echo "Caller : $YIELD_CALLER"
 
-# Calling contract
-$EVM_BIN run --code $CALLER --prestate $GENESIS
+# Calling caller contract
+$EVM_BIN run --code $YIELD_CALLER --prestate $GENESIS
+
+echo "Yield caller contract ran..."
+
+SPAWN_INNER_CALLER=$($EVM_BIN compile $WORK_DIR/caller-inner-spawn.txt)
+echo "Spawn inner caller : $SPAWN_INNER_CALLER"
+
+# Calling caller contract
+$EVM_BIN run --code $SPAWN_INNER_CALLER --prestate $GENESIS
 
 rm $GENESIS
