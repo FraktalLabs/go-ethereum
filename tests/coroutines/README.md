@@ -70,10 +70,13 @@ Essentially running this code in the EVM ( modified `printNumbers.yul` ) :
 603d565b805b60018301811015602157808160200252fc5b6001810190506005565b505050565b6043600360016003fb5050603b6010600b6003565b565b60436026565b6103006020f3
 ```
 
+
 ## Other Test Contracts
 
 1. Run `yields.yul`, using a similar process as above to add a YIELD statment between the 2 `Mstore`s
 ```
+evm --code 6017565b6042608052603260a052565b60156003565b565b run
+evm --code 6017565b6042608052603260a052565b60156003565b565b601d600f565b60806040f3 run
 evm --code 6018565b6042608052fc603260a052565b60166003565b565b601e6010565b60406080f3 run
 ```
 
@@ -102,4 +105,3 @@ Output :
 
 ## TODO
 - Return values not printing once determined only by coroutine queue execution
-- Remove the `ExecuteCoroutine` from yield, and only set a flag that one is ready to run. Allow the Interpreter to execute the coroutines in queue to prevent call stack building up.

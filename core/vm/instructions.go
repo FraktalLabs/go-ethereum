@@ -887,9 +887,10 @@ func opYield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
 
 func opXyield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   // Save current Environment as coroutine ( full stack )
-  evmCoroutine := EVMCoroutine{
-    Coroutine: interpreter.evm.callStackInfo,
-  }
+  // evmCoroutine := EVMCoroutine{
+  //   Coroutine: interpreter.evm.callStackInfo,
+  // }
+  evmCoroutine := NewLocalEvmCoroutine(*pc, interpreter.evm.callStackInfo)
 
   interpreter.evm.PushCoroutine(evmCoroutine)
   log.Println("opXyield : " + strconv.FormatUint(*pc + 1, 10))
