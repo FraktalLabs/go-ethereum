@@ -565,25 +565,6 @@ func opJumpdest(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 	return nil, nil
 }
 
-// TODO: Push end of program to stack before executing spawn and pop off after w/ other args?
-func opSpawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-  if interpreter.evm.abort.Load() {
-    return nil, errStopToken
-  }
-
-  pos := scope.Stack.pop()
-  if !scope.Contract.validJumpdest(&pos) {
-    return nil, ErrInvalidJump
-  }
-  // Save coroutine to memory ( Stack, PC )
-  coroutine := NewCoroutine(pos.Uint64(), *scope.Stack)
-
-  // Add coroutine to queue
-  scope.PushCoroutine(coroutine)
-
-  return nil, nil
-}
-
 func opPc(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.push(new(uint256.Int).SetUint64(*pc))
 	return nil, nil
@@ -710,6 +691,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
 	}
 
 	ret, returnGas, err := interpreter.evm.Call(scope.Contract, toAddr, args, gas, bigVal)
+  log.Printf("opCall: ret=%v, returnGas=%v, err=%v", ret, returnGas, err)
 
   //TODO: Do for other call types
   if err == errYieldToken {
@@ -908,9 +890,52 @@ func opXyield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
   evmCoroutine := EVMCoroutine{
     Coroutine: interpreter.evm.callStackInfo,
   }
+
   interpreter.evm.PushCoroutine(evmCoroutine)
   log.Println("opXyield : " + strconv.FormatUint(*pc + 1, 10))
 
+  return nil, errYieldToken
+}
+
+// Acts like a jump happening in the future when yielded to
+func opSpawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  if interpreter.evm.abort.Load() {
+    return nil, errStopToken
+  }
+
+  pos := scope.Stack.pop()
+  if !scope.Contract.validJumpdest(&pos) {
+    return nil, ErrInvalidJump
+  }
+  // Save coroutine to memory ( Stack, PC )
+  coroutine := NewCoroutine(pos.Uint64(), *scope.Stack)
+
+  // Add coroutine to queue
+  scope.PushCoroutine(coroutine)
+
+  return nil, nil
+}
+
+func opXspawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  // TODO
+  //if interpreter.evm.abort.Load() {
+  //  return nil, errStopToken
+  //}
+  pos := scope.Stack.pop()
+  if !scope.Contract.validJumpdest(&pos) {
+    return nil, ErrInvalidJump
+  }
+  // Save coroutine to memory ( Stack, PC )
+  evmCoroutine := NewLocalEvmCoroutine(pos.Uint64(), interpreter.evm.callStackInfo)
+
+  interpreter.evm.PushCoroutine(evmCoroutine)
+  log.Println("opXspawn : " + strconv.FormatUint(pos.Uint64(), 10))
+
+  return nil, nil
+}
+
+func opSpawnstop(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  log.Println("opSpawnstop : " + strconv.FormatUint(*pc, 10))
   return nil, errYieldToken
 }
 

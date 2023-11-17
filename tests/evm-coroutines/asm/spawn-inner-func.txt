@@ -1,0 +1,58 @@
+;; Jump to main program
+PUSH 0x06
+JUMP
+
+;; Function to print a string in memory at position passed
+;; Push the ABI-encoded string "Hoooo, World!" to memory
+JUMPDEST
+CLOG
+JUMP
+
+;; Main program starts here
+JUMPDEST
+
+;; Load the string into memory
+PUSH 0x20
+PUSH 0
+MSTORE
+
+PUSH 0x0d
+PUSH 32
+MSTORE
+
+;; Push the string "Hoooo, World!" to memory
+PUSH 0x486f6f6f6f2c20576f726c642100000000000000000000000000000000000000
+PUSH 64
+MSTORE
+
+;; Spawn the function to print value at memory position 0x20
+PUSH 0x41
+PUSH 0x20
+PUSH 0x03
+XSPAWN
+;; Pop off args and jump dest
+POP
+POP
+;; Setup to stop at end of spawn'd function execution but continue on spawn call
+PUSH 0x43
+JUMP
+JUMPDEST
+;; Opcode to stop full call stack execution after spawn'd function returns ( return opYieldToken all the way? )
+SPAWNSTOP
+JUMPDEST
+
+;; TODDO: Change memory between spawn call and print
+;; Call function to print value at memory position 0x20
+PUSH 0x4b
+PUSH 0x20
+PUSH 0x03
+JUMP
+JUMPDEST
+
+;; PUSH 0x20
+;; CLOG
+
+;; Return the entire memory
+PUSH 96
+PUSH 0
+RETURN
