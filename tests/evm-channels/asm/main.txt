@@ -1,0 +1,76 @@
+;; Setup string in memory
+PUSH 0x20
+PUSH 0x00
+MSTORE
+
+PUSH 0x0d
+PUSH 0x20
+MSTORE
+
+PUSH 0x586f6f6f6f2c20576f726c642100000000000000000000000000000000000000
+PUSH 0x40
+MSTORE
+
+;; Create a message channel
+PUSH 0x03
+XCHANCREATE
+
+;; Store channel id in memory
+DUP1
+PUSH 0xa0
+MSTORE
+
+;; Spawn worker ( TODO: Cross contract spawn & move logic up )
+;; Call a contract w/ ( Ret size, Ret offset, Args size, Args offset, Value, Contract address, Gas )
+PUSH 0x00
+PUSH 0xc0
+PUSH 0x20
+PUSH 0xa0
+PUSH 0x00
+PUSH 0x4200000000000000000000000000000000000000
+GAS
+CALL
+
+;; TODO: Check call return value
+DUP2
+
+;; Send 5 messages to worker printing status between
+PUSH 0x20
+DUP2
+XCHANSEND
+
+PUSH 0x20
+CLOG
+
+PUSH 0x20
+DUP2
+XCHANSEND
+
+PUSH 0x20
+CLOG
+
+PUSH 0x00
+DUP2
+XCHANSEND
+
+PUSH 0x20
+CLOG
+
+PUSH 0x20
+DUP2
+XCHANSEND
+
+PUSH 0x20
+CLOG
+
+PUSH 0x20
+DUP2
+XCHANSEND
+
+PUSH 0x20
+CLOG
+
+;; Return
+PUSH 0xd0
+PUSH 0x00
+RETURN

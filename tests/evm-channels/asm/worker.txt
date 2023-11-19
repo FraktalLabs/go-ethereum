@@ -1,0 +1,53 @@
+;; Spawn a Jump to main program
+PUSH 0x07
+PUSH 0x0c
+XSPAWN
+POP
+STOP
+JUMPDEST
+SPAWNSTOP
+
+;; Function to print a string in memory at position passed
+JUMPDEST
+CLOG
+JUMP
+
+;; Main program <MAIN>
+JUMPDEST
+
+;; Push string 1 into memory
+PUSH 0x20
+PUSH 0x00
+MSTORE
+
+PUSH 0x0d
+PUSH 0x20
+MSTORE
+
+PUSH 0x486f6f6f6f2c20576f726c642100000000000000000000000000000000000000
+PUSH 0x40
+MSTORE
+
+;; Load channel id from calldata
+PUSH 0x00
+CALLDATALOAD
+
+;; Worker Loop
+JUMPDEST
+
+;; Receive message from channel
+DUP1
+XCHANRECV
+
+;; Call the worker function w/ received message
+PUSH 0x47
+SWAP1
+PUSH 0x09
+JUMP
+
+;; Rerun worker loop
+JUMPDEST
+PUSH 0x3E
+JUMP
+
+;; TODO: Clean up channel / dont receive if passed close signal

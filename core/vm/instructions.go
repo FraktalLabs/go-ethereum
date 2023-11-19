@@ -815,6 +815,17 @@ func opChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
   return nil, nil
 }
 
+func opXChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  bufferSize := scope.Stack.pop()
+  log.Println("opXChanCreate", bufferSize)
+  newXChannel := NewXChannel(bufferSize.Uint64(), 30, 30)
+  idx := len(interpreter.evm.Channels)
+  interpreter.evm.Channels = append(interpreter.evm.Channels, newXChannel)
+  scope.Stack.push(uint256.NewInt(uint64(idx)))
+
+  return nil, nil
+}
+
 func opChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   channelIdx, value := scope.Stack.pop(), scope.Stack.pop()
   channel := &scope.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
@@ -845,11 +856,42 @@ func opChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
   return nil, nil
 }
 
+func opXChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  channelIdx, value := scope.Stack.pop(), scope.Stack.pop()
+  log.Println("opXChanSend", channelIdx, value)
+
+  channel := &interpreter.evm.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
+
+  if len(channel.ReceiveQueue) == 0 {
+    if uint64(len(channel.Buffer)) < channel.BufferSize {
+      channel.Buffer = append(channel.Buffer, value)
+      return nil, nil
+    } else {
+      if uint64(len(channel.SendQueue)) >= channel.SendQueueSize {
+        return nil, errors.New("Channel send queue is full")
+      }
+      evmCoroutine := NewLocalEvmCoroutine(*pc, interpreter.evm.callStackInfo)
+      channel.SendQueue = append(channel.SendQueue, XChanSend{value, evmCoroutine})
+      return nil, errYieldToken
+    }
+  } else {
+    evmCoroutine := NewLocalEvmCoroutine(*pc, interpreter.evm.callStackInfo)
+    interpreter.evm.PushCoroutine(evmCoroutine)
+    receiveCoroutine := channel.ReceiveQueue[0]
+    channel.ReceiveQueue = channel.ReceiveQueue[1:]
+
+    receiveCoroutine.Coroutine[len(receiveCoroutine.Coroutine)-1].Scope.Stack.push(&value)
+    interpreter.evm.coroutineQueue = append([]EVMCoroutine{receiveCoroutine}, interpreter.evm.coroutineQueue...)
+    return nil, errYieldToken
+  }
+
+  return nil, nil
+}
+
 func opChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   //TODO: Receive data from channel & push to stack
   channelIdx := scope.Stack.pop()
   channel := &scope.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
-
 
   if len(channel.Buffer) == 0 {
     if uint64(len(channel.ReceiveQueue)) >= channel.ReceiveQueueSize {
@@ -867,6 +909,35 @@ func opChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
       channel.SendQueue = channel.SendQueue[1:]
       channel.Buffer = append(channel.Buffer, sendValue)
       scope.PushCoroutine(sendCoroutine)
+    } else {
+      return nil, nil
+    }
+  }
+
+  return nil, nil
+}
+
+func opXChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  channelIdx := scope.Stack.pop()
+  log.Println("opXChanRecv", channelIdx)
+  channel := &interpreter.evm.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
+
+  if len(channel.Buffer) == 0 {
+    if uint64(len(channel.ReceiveQueue)) >= channel.ReceiveQueueSize {
+      return nil, errors.New("Channel receive queue is full")
+    }
+    evmCoroutine := NewLocalEvmCoroutine(*pc, interpreter.evm.callStackInfo)
+    channel.ReceiveQueue = append(channel.ReceiveQueue, evmCoroutine)
+    return nil, errYieldToken
+  } else {
+    value := channel.Buffer[0]
+    channel.Buffer = channel.Buffer[1:]
+    scope.Stack.push(&value)
+    if len(channel.SendQueue) > 0 {
+      sendCoroutine, sendValue := channel.SendQueue[0].EVMCoroutine, channel.SendQueue[0].Value
+      channel.SendQueue = channel.SendQueue[1:]
+      channel.Buffer = append(channel.Buffer, sendValue)
+      interpreter.evm.PushCoroutine(sendCoroutine)
     } else {
       return nil, nil
     }

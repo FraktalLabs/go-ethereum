@@ -211,6 +211,9 @@ const (
   XYIELD
   XSPAWN
   SPAWNSTOP
+  XCHANCREATE
+  XCHANSEND
+  XCHANRECV
 )
 
 // 0xf0 range - closures.
@@ -408,6 +411,9 @@ var opCodeToString = map[OpCode]string{
   CHANCREATE:   "CHANCREATE",
   CHANSEND:     "CHANSEND",
   CHANRECV:     "CHANRECV",
+  XCHANCREATE:  "XCHANCREATE",
+  XCHANSEND:    "XCHANSEND",
+  XCHANRECV:    "XCHANRECV",
 	STATICCALL:   "STATICCALL",
   SPAWN:        "SPAWN",
   YIELD:        "YIELD",
@@ -468,6 +474,9 @@ var stringToOp = map[string]OpCode{
   "CHANCREATE":     CHANCREATE,
   "CHANSEND":       CHANSEND,
   "CHANRECV":       CHANRECV,
+  "XCHANCREATE":    XCHANCREATE,
+  "XCHANSEND":      XCHANSEND,
+  "XCHANRECV":      XCHANRECV,
 	"STATICCALL":     STATICCALL,
   "SPAWN":          SPAWN,
   "YIELD":          YIELD,
