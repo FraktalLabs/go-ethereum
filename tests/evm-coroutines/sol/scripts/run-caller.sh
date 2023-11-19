@@ -12,23 +12,29 @@ SOL_BIN=$WORK_DIR/../../../../solidity/build/solc/solc
 $SCRIPT_DIR/generate-genesis.sh
 
 # Compile the contract
-CONTRACT_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/yield-caller.sol | grep yield-caller.sol:YieldCaller -A 2 | tail -n 1)
-echo "Caller Init Contract binary: $CONTRACT_INIT_BIN"
+YIELD_CALLER_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/yield-caller.sol | grep yield-caller.sol:YieldCaller -A 2 | tail -n 1)
+echo "Caller Init Contract binary: $YIELD_CALLER_INIT_BIN"
 
 # Run the init contract
-CONTRACT_BIN=$($EVM_BIN --code $CONTRACT_INIT_BIN run | tail -n 1)
-echo "Yield caller contract binary: $CONTRACT_BIN"
+YIELD_CALLER_BIN=$($EVM_BIN --code $YIELD_CALLER_INIT_BIN run | tail -n 1)
+echo "Yield caller contract binary: $YIELD_CALLER_BIN"
 
 # Run the contract w/ main() function
-$EVM_BIN --code $CONTRACT_BIN run --prestate $GENESIS --input 0xdffeadd0
+$EVM_BIN --code $YIELD_CALLER_BIN run --prestate $GENESIS --input 0xdffeadd0
 
 echo "Yield caller contract done.."
 
 # Compile the contract
-# SPAWN_INNER_CALLER_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-inner-caller.sol | tail -n 1)
-# echo "Spawn inner caller contract binary: $SPAWN_INNER_CALLER_BIN"
-# 
-# # Run the contract
-# $EVM_BIN --code $SPAWN_INNER_CALLER_BIN run --prestate $GENESIS
+SPAWN_CALLER_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/spawn-inner-caller.sol | grep spawn-inner-caller.sol:SpawnCaller -A 2 | tail -n 1)
+echo "Spawn caller init contract binary: $SPAWN_CALLER_INIT_BIN"
+
+# Run the init contract
+SPAWN_CALLER_BIN=$($EVM_BIN --code $SPAWN_CALLER_INIT_BIN run | tail -n 1)
+echo "Spawn caller contract binary: $SPAWN_CALLER_BIN"
+
+# Run the contract w/ main() function
+$EVM_BIN --code $SPAWN_CALLER_BIN run --prestate $GENESIS --input 0xdffeadd0
+
+echo "Spawn caller contract done.."
 
 rm $GENESIS
