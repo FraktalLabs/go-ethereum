@@ -24,8 +24,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
-
-	log2 "log"
 )
 
 // Config are the configuration options for the Interpreter
@@ -171,7 +169,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	)
   //TODO: cost?
   in.evm.callStackInfo[len(in.evm.callStackInfo)-1].AddScopeContext(callContext, &pc)
-  log2.Println("CallStackInfo stored : ", in.evm.callStackInfo[len(in.evm.callStackInfo)-1])
 
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
 	// so that it get's executed _after_: the capturestate needs the stacks before
@@ -213,7 +210,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	  	cost = operation.constantGas // For tracing
 	  	// Validate stack
 	  	if sLen := stack.len(); sLen < operation.minStack {
-        log2.Println("Stack underflow w/ op : ", op, "stack len : ", sLen, "minStack : ", operation.minStack)
 	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
 	  	} else if sLen > operation.maxStack {
 	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
@@ -331,7 +327,6 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
 	)
   //TODO: cost?
   //in.evm.callStackInfo[len(in.evm.callStackInfo)-1].AddScopeContext(callContext, &pc)
-  //log2.Println("CallStackInfo stored : ", in.evm.callStackInfo[len(in.evm.callStackInfo)-1])
 
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
 	// so that it get's executed _after_: the capturestate needs the stacks before
@@ -354,8 +349,6 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
 	//	}()
 	//}
 
-  log2.Println("Resuming w/ memory size: ", mem.Len(), " and stack size: ", stack.len(), " and pc: ", &pc, "callContext: ", callContext)
-  log2.Println("Memory: ", mem.Data())
   var coroutine Coroutine
   // Coroutine queue loop
   for {
@@ -379,7 +372,6 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
 	  	cost = operation.constantGas // For tracing
 	  	// Validate stack
 	  	if sLen := stack.len(); sLen < operation.minStack {
-        log2.Println("Stack underflow w/ op : ", op, "stack len : ", sLen, "minStack : ", operation.minStack)
 	  		return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
 	  	} else if sLen > operation.maxStack {
 	  		return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
@@ -431,7 +423,6 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
       if reentry && in.evm.depth < len(evmCoroutine.Coroutine) {
         // Re entry on a call operation
         // TODO: Make this cleaner and better w/ different call types?
-        log2.Println("Re entry on a call operation")
         res, err = in.evm.CallResume(evmCoroutine)
         reentry = false
         if err == errYieldToken {
@@ -445,12 +436,10 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
       } else if reentry && in.evm.depth == len(evmCoroutine.Coroutine) {
         // Re entry on a yielding operation
         // Do nothing and go to next operation
-        log2.Println("Re entry on a yielding operation w/ op : ", op)
         // TODO: I dont like this
         if !(op.String() == "YIELD" || op.String() == "XYIELD" ||
              op.String() == "CHANSEND" || op.String() == "CHANRECV" ||
              op.String() == "XCHANSEND" || op.String() == "XCHANRECV") {
-          log2.Println("Not a yielding operation, going back")
           *pc-- // Go back since not a yielding operation
         }
         reentry = false

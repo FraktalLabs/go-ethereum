@@ -13,9 +13,6 @@ $SCRIPT_DIR/generate-genesis.sh
 
 # Compile code
 echo "Compiling main.sol..."
-echo "===================="
-$SOL_BIN --bin $WORK_DIR/main.sol
-echo "===================="
 MAIN_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/main.sol | grep main.sol:Main -A 2 | tail -n 1)
 echo "Main Init : $MAIN_INIT_BIN"
 

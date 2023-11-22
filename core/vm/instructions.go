@@ -20,7 +20,6 @@ import (
 	"errors"
 	"log"
 	"math/big"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -691,7 +690,6 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
 	}
 
 	ret, returnGas, err := interpreter.evm.Call(scope.Contract, toAddr, args, gas, bigVal)
-  log.Printf("opCall: ret=%v, returnGas=%v, err=%v", ret, returnGas, err)
 
   //TODO: Do for other call types
   if err == errYieldToken {
@@ -817,7 +815,6 @@ func opChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
 
 func opXChanCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   bufferSize := scope.Stack.pop()
-  log.Println("opXChanCreate", bufferSize)
   newXChannel := NewXChannel(bufferSize.Uint64(), 30, 30)
   idx := len(interpreter.evm.Channels)
   interpreter.evm.Channels = append(interpreter.evm.Channels, newXChannel)
@@ -858,7 +855,6 @@ func opChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 
 func opXChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   channelIdx, value := scope.Stack.pop(), scope.Stack.pop()
-  log.Println("opXChanSend", channelIdx, value)
 
   channel := &interpreter.evm.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
 
@@ -919,7 +915,6 @@ func opChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 
 func opXChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   channelIdx := scope.Stack.pop()
-  log.Println("opXChanRecv", channelIdx)
   channel := &interpreter.evm.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
 
   if len(channel.Buffer) == 0 {
@@ -964,7 +959,6 @@ func opXyield(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
   evmCoroutine := NewLocalEvmCoroutine(*pc, interpreter.evm.callStackInfo)
 
   interpreter.evm.PushCoroutine(evmCoroutine)
-  log.Println("opXyield : " + strconv.FormatUint(*pc + 1, 10))
 
   return nil, errYieldToken
 }
@@ -1001,13 +995,11 @@ func opXspawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
   evmCoroutine := NewLocalEvmCoroutine(pos.Uint64(), interpreter.evm.callStackInfo)
 
   interpreter.evm.PushCoroutine(evmCoroutine)
-  log.Println("opXspawn : " + strconv.FormatUint(pos.Uint64(), 10))
 
   return nil, nil
 }
 
 func opSpawnstop(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-  log.Println("opSpawnstop : " + strconv.FormatUint(*pc, 10))
   return nil, errYieldToken
 }
 

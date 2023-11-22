@@ -18,7 +18,6 @@ package vm
 
 import (
 	"errors"
-	"log"
 	"math/big"
 	"sync/atomic"
 
@@ -218,8 +217,6 @@ func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 
 func (evm *EVM) PushCoroutine(coroutine EVMCoroutine) {
   evm.coroutineQueue = append(evm.coroutineQueue, coroutine)
-  log.Println("Pushed coroutine to queue : ", coroutine)
-  log.Println("Coroutine Queue : ", evm.coroutineQueue)
 }
 
 func (evm *EVM) PopCoroutine() (EVMCoroutine, error) {
@@ -303,24 +300,20 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
       evm.callStackInfo = append(evm.callStackInfo, callInfo)
 			ret, err = evm.interpreter.Run(contract, input, false)
       evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
-      log.Println("Popped & Call Stack Info : ", err, evm.callStackInfo)
 			gas = contract.Gas
 		}
 	}
 
   var coroutine EVMCoroutine
   for {
-    log.Println("Coroutine Queue loop : ", err)
     if (err != errYieldToken && err != nil) || evm.depth > 0 {
       // Only resume next coroutine if we are on top level call & yielding / stopped
-      log.Println("Not yielding token or depth > 0", err, evm.depth)
       break
     }
 
     coroutine, err = evm.PopCoroutine()
     if err != nil {
       // Coroutine queue is empty
-      log.Println("Coroutine queue is empty")
       err = nil
       break
     }
@@ -328,7 +321,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
     // TODO: Do i need to handle gas any particular way?
     //       store contract object in coroutine?
     ret, err = evm.CallResume(&coroutine)
-    log.Println("Coroutine CallResume finished : ", ret, err)
   }
 
 	// When an error was returned by the EVM or when setting the creation code
@@ -350,7 +342,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 
 // CallResume resumes the execution of a coroutine
 func (evm *EVM) CallResume(coroutine *EVMCoroutine) (ret []byte, err error) {
-  log.Println("CallResume : ", coroutine)
   //TODO: Do different things based on coroutine call type
   //TODO: Precompiles?
 
@@ -360,12 +351,9 @@ func (evm *EVM) CallResume(coroutine *EVMCoroutine) (ret []byte, err error) {
   }
 
   // Resume Interpreter
-  log.Println("  Coroutine loop : ", coroutine.Coroutine[evm.depth])
   evm.callStackInfo = append(evm.callStackInfo, coroutine.Coroutine[evm.depth])
   ret, err = evm.interpreter.Resume(coroutine)
   evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
-  log.Println("Coroutine loop Popped & Call Stack Info : ", evm.callStackInfo)
-  log.Println(ret, err)
 
   return ret, err
 }
