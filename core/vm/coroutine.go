@@ -28,12 +28,13 @@ func NewLocalEvmCoroutine(pc uint64, callInfos []*CallInfo) EVMCoroutine {
   //callInfos[len(callInfos)-1].PC = &pc
 
   newCallInfos := make([]*CallInfo, len(callInfos))
-  copy(newCallInfos, callInfos)
-  for _, callInfo := range newCallInfos {
+  //copy(newCallInfos, callInfos)
+  for id, callInfo := range callInfos {
     newStack := deepCopyStack(callInfo.Scope.Stack)
-    callInfo.Scope = &ScopeContext{callInfo.Scope.Memory, newStack, callInfo.Scope.Contract, callInfo.Scope.CoroutineQueue, callInfo.Scope.Channels}
+    newScopeContext := ScopeContext{callInfo.Scope.Memory, newStack, callInfo.Scope.Contract, callInfo.Scope.CoroutineQueue, callInfo.Scope.Channels}
+    newCallInfos[id] = &CallInfo{callInfo.Caller, callInfo.Address, callInfo.Input, callInfo.CallType, callInfo.Snapshot, &newScopeContext, callInfo.PC}
   }
   newCallInfos[len(newCallInfos)-1].PC = &pc
 
-  return EVMCoroutine{callInfos}
+  return EVMCoroutine{newCallInfos}
 }
