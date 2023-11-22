@@ -149,6 +149,8 @@ type EVM struct {
   callStackInfo []*CallInfo
   // Coroutine Queue
   coroutineQueue []EVMCoroutine
+  // Channel Array
+  Channels []XChannel
 
 	// chainConfig contains information about the current chain
 	chainConfig *params.ChainConfig

@@ -1056,6 +1056,24 @@ func newFrontierInstructionSet() JumpTable {
       minStack:    minStack(1, 1),
       maxStack:    maxStack(1, 1), // TODO
     },
+    XCHANCREATE: {
+      execute:     opXChanCreate,
+      constantGas: GasSlowStep, // TODO
+      minStack:    minStack(1, 1),
+      maxStack:    maxStack(1, 1), // TODO
+    },
+    XCHANSEND: {
+      execute:     opXChanSend,
+      constantGas: GasSlowStep, // TODO
+      minStack:    minStack(2, 0),
+      maxStack:    maxStack(2, 0),
+    },
+    XCHANRECV: {
+      execute:     opXChanRecv,
+      constantGas: GasSlowStep, // TODO
+      minStack:    minStack(1, 1),
+      maxStack:    maxStack(1, 1), // TODO
+    },
     SPAWN: {
       execute:     opSpawn,
       constantGas: GasSlowStep, // TODO

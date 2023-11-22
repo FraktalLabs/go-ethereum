@@ -447,7 +447,9 @@ func (in *EVMInterpreter) Resume(evmCoroutine *EVMCoroutine) (ret []byte, err er
         // Do nothing and go to next operation
         log2.Println("Re entry on a yielding operation w/ op : ", op)
         // TODO: I dont like this
-        if !(op.String() == "YIELD" || op.String() == "XYIELD") {
+        if !(op.String() == "YIELD" || op.String() == "XYIELD" ||
+             op.String() == "CHANSEND" || op.String() == "CHANRECV" ||
+             op.String() == "XCHANSEND" || op.String() == "XCHANRECV") {
           log2.Println("Not a yielding operation, going back")
           *pc-- // Go back since not a yielding operation
         }
