@@ -999,6 +999,37 @@ func opXspawn(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
   return nil, nil
 }
 
+func opXspawnc(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+  stack := scope.Stack
+  // Pop gas. The actual gas in interpreter.evm.callGasTemp.
+  // We can use this as a temporary value
+  temp := stack.pop()
+  gas := interpreter.evm.callGasTemp
+  // Pop other call parameters.
+  // TODO: No ret data can be returned from spawn func?
+  addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+  toAddr := common.Address(addr.Bytes20())
+  // Get the arguments from the memory.
+  args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
+
+  if interpreter.readOnly && !value.IsZero() {
+    return nil, ErrWriteProtection
+  }
+
+  var bigVal = big0
+  if !value.IsZero() {
+    gas += params.CallStipend
+    bigVal = value.ToBig()
+  }
+
+  log.Println("opXspawnc w/ addr: ", addr, " value: ", value, " inOffset: ", inOffset, " inSize: ", inSize, " retOffset: ", retOffset, " retSize: ", retSize, "temp: ", temp, " gas: ", gas, " toAddr: ", toAddr, " args: ", args)
+  interpreter.evm.SpawnCall(scope.Contract, toAddr, args, gas, bigVal)
+  //TODO : ret, returnGas, err := interpreter.evm.Call(scope.Contract, toAddr, args, gas, bigVal)
+  // TODO: Memory?? & gas? & value?
+  
+  return nil, nil
+}
+
 func opSpawnstop(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
   return nil, errYieldToken
 }
