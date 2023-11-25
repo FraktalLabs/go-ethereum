@@ -21,6 +21,7 @@ $EVM_BIN --code $CONTRACT_BIN run --prestate $GENESIS
 echo "Yield caller contract done.."
 
 # Compile the contract
+#$SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-inner-caller.yul
 SPAWN_INNER_CALLER_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-inner-caller.yul | tail -n 1)
 echo "Spawn inner caller contract binary: $SPAWN_INNER_CALLER_BIN"
 
@@ -29,6 +30,7 @@ $EVM_BIN --code $SPAWN_INNER_CALLER_BIN run --prestate $GENESIS
 
 echo "Spawn inner caller contract done.."
 
+#echo $SOL_BIN --strict-assembly --bin $WORK_DIR/spawnc-inner-caller.yul
 SPAWNC_INNER_CALLER_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawnc-inner-caller.yul | tail -n 1)
 echo "Spawnc inner caller contract binary: $SPAWNC_INNER_CALLER_BIN"
 

@@ -1012,6 +1012,9 @@ func opXspawnc(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
   // Get the arguments from the memory.
   args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
+  newInput := make([]byte, len(args))
+  copy(newInput, args)
+
   if interpreter.readOnly && !value.IsZero() {
     return nil, ErrWriteProtection
   }
@@ -1022,11 +1025,20 @@ func opXspawnc(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
     bigVal = value.ToBig()
   }
 
-  log.Println("opXspawnc w/ addr: ", addr, " value: ", value, " inOffset: ", inOffset, " inSize: ", inSize, " retOffset: ", retOffset, " retSize: ", retSize, "temp: ", temp, " gas: ", gas, " toAddr: ", toAddr, " args: ", args)
-  interpreter.evm.SpawnCall(scope.Contract, toAddr, args, gas, bigVal)
+  interpreter.evm.SpawnCall(scope.Contract, toAddr, newInput, gas, bigVal)
   //TODO : ret, returnGas, err := interpreter.evm.Call(scope.Contract, toAddr, args, gas, bigVal)
   // TODO: Memory?? & gas? & value?
   
+  // TODO: What to return on err
+	//if err != nil {
+	//	temp.Clear()
+	//} else {
+	//	temp.SetOne()
+	//}
+  // Return 0 on spawn, 1 after return from spawn
+  temp.Clear()
+	stack.push(&temp)
+
   return nil, nil
 }
 

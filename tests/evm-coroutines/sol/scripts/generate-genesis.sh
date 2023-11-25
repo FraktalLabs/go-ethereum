@@ -23,6 +23,13 @@ echo "Spawn Init contract code: $SPAWN_INIT_BIN"
 SPAWN_BIN=$($EVM_BIN --code $SPAWN_INIT_BIN run | tail -n 1)
 echo "Spawn contract code: $SPAWN_BIN"
 
+SPAWNC_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/spawnc-contract.sol | tail -n 1)
+echo "Spawnc Init contract code: $SPAWNC_INIT_BIN"
+
+SPAWNC_BIN=$($EVM_BIN --code $SPAWNC_INIT_BIN run | tail -n 1)
+echo "Spawnc contract code: $SPAWNC_BIN"
+
 # Generate genesis json
 sed -e "s|<YIELD_CONTRACT_CODE>|$YIELD_BIN|" $GENESIS_TEMPLATE > $WORK_DIR/genesis.json
 sed -i -e "s|<SPAWN_CONTRACT_CODE>|$SPAWN_BIN|" $WORK_DIR/genesis.json
+sed -i -e "s|<SPAWNC_CONTRACT_CODE>|$SPAWNC_BIN|" $WORK_DIR/genesis.json

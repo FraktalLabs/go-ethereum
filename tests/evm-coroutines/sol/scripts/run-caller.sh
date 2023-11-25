@@ -37,4 +37,17 @@ $EVM_BIN --code $SPAWN_CALLER_BIN run --prestate $GENESIS --input 0xdffeadd0
 
 echo "Spawn caller contract done.."
 
-rm $GENESIS
+#echo $SOL_BIN --bin $WORK_DIR/spawnc-inner-caller.sol
+SPAWNC_CALLER_INIT_BIN=$($SOL_BIN --bin $WORK_DIR/spawnc-inner-caller.sol | grep spawnc-inner-caller.sol:SpawnCaller -A 2 | tail -n 1)
+echo "Spawnc caller init contract binary: $SPAWNC_CALLER_INIT_BIN"
+
+# Run the init contract
+SPAWNC_CALLER_BIN=$($EVM_BIN --code $SPAWNC_CALLER_INIT_BIN run | tail -n 1)
+echo "Spawnc caller contract binary: $SPAWNC_CALLER_BIN"
+
+# Run the contract w/ main() function
+$EVM_BIN --code $SPAWNC_CALLER_BIN run --prestate $GENESIS --input 0xdffeadd0
+
+echo "Spawnc caller contract done.."
+
+#rm $GENESIS
