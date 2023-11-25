@@ -211,6 +211,7 @@ const (
   XYIELD
   XSPAWN
   SPAWNSTOP
+  XSPAWNCALL
   XCHANCREATE
   XCHANSEND
   XCHANRECV
@@ -400,6 +401,7 @@ var opCodeToString = map[OpCode]string{
   XYIELD: "XYIELD",
   XSPAWN: "XSPAWN",
   SPAWNSTOP: "SPAWNSTOP",
+  XSPAWNCALL: "XSPAWNCALL",
 
 	// 0xf0 range - closures.
 	CREATE:       "CREATE",
@@ -584,6 +586,7 @@ var stringToOp = map[string]OpCode{
   "XYIELD":         XYIELD,
   "XSPAWN":         XSPAWN,
   "SPAWNSTOP":      SPAWNSTOP,
+  "XSPAWNCALL":     XSPAWNCALL,
 	"CREATE":         CREATE,
 	"CREATE2":        CREATE2,
 	"CALL":           CALL,

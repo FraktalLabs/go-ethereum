@@ -17,6 +17,10 @@ echo "Yield contract code: $YIELD_BIN"
 SPAWN_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawn-contract.yul | tail -n 1)
 echo "Spawn contract code: $SPAWN_BIN"
 
+SPAWNC_BIN=$($SOL_BIN --strict-assembly --bin $WORK_DIR/spawnc-contract.yul | tail -n 1)
+echo "SpawnC contract code: $SPAWNC_BIN"
+
 # Generate genesis json
 sed -e "s|<YIELD_CONTRACT_CODE>|0x$YIELD_BIN|" $GENESIS_TEMPLATE > $WORK_DIR/genesis.json
 sed -i -e "s|<SPAWN_CONTRACT_CODE>|0x$SPAWN_BIN|" $WORK_DIR/genesis.json
+sed -i -e "s|<SPAWNC_CONTRACT_CODE>|0x$SPAWNC_BIN|" $WORK_DIR/genesis.json

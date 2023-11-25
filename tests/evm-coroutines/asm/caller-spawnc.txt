@@ -1,0 +1,53 @@
+;; Setup error variables in memory
+;; OK - O - at 0x00
+PUSH 0x4F
+PUSH 0x00
+MSTORE
+
+;; ERR - F - at 0x20
+PUSH 0x46
+PUSH 0x20
+MSTORE
+
+;; Setup call args
+PUSH 0xd09de08a
+PUSH 0x80
+MSTORE
+
+;; Call a contract w/ ( Ret size, Ret offset, Args size, Args offset, Value, Contract address, Gas )
+;; Call args only contains calldata
+PUSH 0x00
+PUSH 0xa0
+PUSH 0x20
+PUSH 0x80
+PUSH 0x00
+PUSH 0x4200000000000000000000000000000000000002
+GAS
+XSPAWNCALL
+;; Setup to skip over spawn call ret stuff
+ISZERO
+PUSH 0x38
+JUMPI
+SPAWNSTOP
+JUMPDEST
+
+;; CALL
+;; POP
+
+;; Log success
+PUSH 0x20
+PUSH 0xe0
+MSTORE
+
+PUSH 0x00
+MLOAD
+PUSH 0x0100 
+MSTORE
+
+PUSH 0xe0
+CLOG
+
+;; Return the entire memory
+PUSH 0x120
+PUSH 0
+RETURN

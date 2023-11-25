@@ -1086,6 +1086,14 @@ func newFrontierInstructionSet() JumpTable {
       minStack:    minStack(1, 0),
       maxStack:    maxStack(1, 0),
     },
+    XSPAWNCALL: {
+      execute:     opXspawnc,
+      constantGas: GasSlowStep, // TODO
+      dynamicGas:  gasCall, //TODO
+			minStack:    minStack(7, 1),
+			maxStack:    maxStack(7, 1),
+      //TODO: memorySize:  memoryCall,
+    },
     SPAWNSTOP: {
       execute:     opSpawnstop,
       constantGas: GasSlowStep, // TODO

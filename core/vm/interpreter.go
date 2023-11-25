@@ -117,6 +117,37 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	return &EVMInterpreter{evm: evm, table: table}
 }
 
+func (in *EVMInterpreter) SpawnRun(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
+  var (
+    mem         = NewMemory() // bound memory
+    stack       = newstack()  // local stack
+    callContext = &ScopeContext{
+      Memory:   mem, 
+      Stack:    stack,
+      Contract: contract,
+      CoroutineQueue: []Coroutine{},
+      Channels: []Channel{},
+    }
+    // For optimisation reason we're using uint64 as the program counter.
+    // It's theoretically possible to go above 2^64. The YP defines the PC
+    // to be uint256. Practically much less so feasible.
+    pc   = uint64(0) // program counter
+  )
+  //TODO: cost?
+  in.evm.callStackInfo[len(in.evm.callStackInfo)-1].AddScopeContext(callContext, &pc)
+
+  defer func() {
+    returnStack(stack)
+  }()
+  contract.Input = input
+
+  evmCoroutine := NewLocalEvmCoroutine(0, in.evm.callStackInfo)
+  
+  in.evm.PushCoroutine(evmCoroutine)
+
+  return nil, nil
+}
+
 // Run loops and evaluates the contract's code with the given input data and returns
 // the return byte-slice and an error if one occurred.
 //

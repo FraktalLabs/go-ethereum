@@ -228,6 +228,40 @@ func (evm *EVM) PopCoroutine() (EVMCoroutine, error) {
   return coroutine, nil
 }
 
+func (evm *EVM) SpawnCall(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+  if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+    return nil, gas, ErrInsufficientBalance
+  }
+
+  snapshot := evm.StateDB.Snapshot()
+  // TODO: precompile? and other call stuff?
+
+  if !evm.StateDB.Exist(addr) {
+    evm.StateDB.CreateAccount(addr)
+  }
+  evm.Context.Transfer(evm.StateDB, caller.Address(), addr, value)
+
+  code := evm.StateDB.GetCode(addr)
+  if len(code) == 0 {
+    ret, err = nil, nil // gas is unchanged
+  } else {
+    addrCopy := addr
+    // If the account has no code, we can abort here
+    // The depth-check is already done, and precompiles handled above
+    contract := NewContract(caller, AccountRef(addrCopy), value, gas)
+    contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
+    //TODO: Do for all other call types
+    //TODO: Why addrCopy?
+    callInfo := NewCallInfo(caller.Address(), addrCopy, input, CallTypeCall, snapshot)
+    evm.callStackInfo = append(evm.callStackInfo, callInfo)
+    ret, err = evm.interpreter.SpawnRun(contract, input, false)
+    evm.callStackInfo = evm.callStackInfo[:len(evm.callStackInfo)-1]
+    //gas = contract.Gas
+  }
+
+  return ret, gas, err
+}
+
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an

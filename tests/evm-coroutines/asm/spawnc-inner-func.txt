@@ -1,0 +1,18 @@
+;; Load the string into memory
+PUSH 0x20
+PUSH 0
+MSTORE
+
+PUSH 0x0d
+PUSH 32
+MSTORE
+
+;; Push the string "Hoooo, World!" to memory
+PUSH 0x486f6f6f6f2c20576f726c642100000000000000000000000000000000000000
+PUSH 64
+MSTORE
+
+;; TODDO: use passed in calldata
+
+PUSH 0x20
+CLOG

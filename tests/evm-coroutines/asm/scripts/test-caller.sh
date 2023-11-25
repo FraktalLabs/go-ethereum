@@ -25,4 +25,14 @@ echo "Spawn inner caller : $SPAWN_INNER_CALLER"
 # Calling caller contract
 $EVM_BIN run --code $SPAWN_INNER_CALLER --prestate $GENESIS
 
+echo "Spawn inner caller contract ran..."
+
+SPAWNC_INNER_CALLER=$($EVM_BIN compile $WORK_DIR/caller-spawnc.txt)
+echo "Spawnc inner caller : $SPAWNC_INNER_CALLER"
+
+# Calling caller contract
+$EVM_BIN run --code $SPAWNC_INNER_CALLER --prestate $GENESIS
+
+echo "Spawn inner caller contract ran..."
+
 rm $GENESIS
