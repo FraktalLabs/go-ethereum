@@ -50,4 +50,4 @@ $EVM_BIN --code $SPAWNC_CALLER_BIN run --prestate $GENESIS --input 0xdffeadd0
 
 echo "Spawnc caller contract done.."
 
-#rm $GENESIS
+rm $GENESIS
