@@ -1007,7 +1007,8 @@ func opXspawnc(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
   gas := interpreter.evm.callGasTemp
   // Pop other call parameters.
   // TODO: No ret data can be returned from spawn func?
-  addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+  //addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+  addr, value, inOffset, inSize, _, _ := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
   toAddr := common.Address(addr.Bytes20())
   // Get the arguments from the memory.
   args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))

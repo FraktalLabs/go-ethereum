@@ -9,4 +9,8 @@ contract SpawncTest {
     string memory val = "Spawned Hello World!";
     printer(val);
   }
+
+  function main2(string memory val) external {
+    printer(val);
+  }
 }
