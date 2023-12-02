@@ -18,6 +18,8 @@ For more info on Fraktal : https://github.com/FraktalLabs/fraktal#fraktal
   - String encoding is the same as Solidity memory strings, clog takes mem pointer to str len
   - Allows easy testing and development with evm binary
 
+#### Forked from 3f40e65c484486dea6cff80b7db178985d21a2c6 (v1.13.1)
+
 ## Future Things
 
 - Cross Contract Yield ( Allow YIELD and SPAWN to work between contract calls in call stack )

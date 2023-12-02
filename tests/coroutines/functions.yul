@@ -14,7 +14,10 @@
   }
 
   function main() {
-    basic()
+    spawn(func2(0x10, 0x50, 0x30))
     func1(0x32)
   }
+
+  main()
+  return(0x80, 0x40)
 }

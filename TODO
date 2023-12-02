@@ -1,0 +1,54 @@
+Critical TODOs
+------------------
+Determine & Fix where I should be using pointers, copying / deep copying data, ...
+Think more about if snapshots are safe from incorrect reversion attacks due to coroutine impl
+Figure out in what way coroutines, channels, ... can be rolled up and optimistically proven on L1
+  DA : coutines & channels DA already there and can be computed from past state ( possible large witness )
+Determine how to fix opcode bloat ( Idea : Rollup opcode (FF?) which uses next byte for more opcodes )
+SPAWNSTOP makes arbitrary contract calls unsafe:
+  This is due to being able to YIELD (STOP) all contract execution mid-way thru and not revert
+  Safety can potentially be kept if properly using "Check Effects Interactions"
+  Potential EVM level solution : Don't allow exec yield end execution ( check each contract still open ? )
+Add Yielding / coroutine setup for all other call types
+
+Misc TODOs
+----------
+Add documentation for EVM Coroutines
+Add documentation for filestore
+
+Features
+--------
+Unbuffered Channels
+Cast Channels to read / write only
+No-yield specifier on functions / calls ?
+Torrent setup for filestore & torrent store root onchain
+Add groups & permissions to filestore file access based on accounts ( similar to linux )
+Isolated docker container to run commands on filestore data in EVM w/ included modules like :
+  git
+  jq
+  make
+  fraktal solidity compiler
+  proc-evm
+  ...
+SCLOG : Stack CLOG
+MCLOG : Single memory slot CLOG
+Selectable Channels
+Channel data opcodes ( access data from last channel send / recv ):
+  CHANSENDER
+  CHANCHAIN
+  CHANCALLER
+  CHANVAL?
+  ...
+Add tx field for YIELD gas :
+  If enough provided, OUT OF GAS errors yield coroutine to memory for refueling
+  Enough = sufficient funds to store coroutine
+  Else revert as normal ( if no yield gas provided, then default functionality )
+  Note : need No-yield before this option is available?
+Add gas computations and passing gas between coroutines
+Fix gas costs on all opcodes
+
+Tests
+-----
+Clean up test directory(s) and make them more ubiquitous. Also append to global testing setup.
+Create an "Actor" test setup ( Object / Contract wrapper on a channel )
+Add all tests to Github Actions

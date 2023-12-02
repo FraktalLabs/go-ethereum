@@ -96,7 +96,7 @@ const (
 )
 
 type CallInfo struct {
-  //TODO: Just store contract w/ this styiff instead?
+  //TODO: Just store contract w/ this stuff instead?
   // Call information
   Caller    common.Address // Provides information for CALLER
   Address   common.Address // Provides information for ADDRESS
@@ -144,7 +144,6 @@ type EVM struct {
 	// Depth is the current call stack
 	depth int
   // Call Stack Info contains refs & data needed to stash coroutines
-  // TODO: use pointers or not?
   callStackInfo []*CallInfo
   // Coroutine Queue
   coroutineQueue []EVMCoroutine
@@ -250,8 +249,6 @@ func (evm *EVM) SpawnCall(caller ContractRef, addr common.Address, input []byte,
     // The depth-check is already done, and precompiles handled above
     contract := NewContract(caller, AccountRef(addrCopy), value, gas)
     contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
-    //TODO: Do for all other call types
-    //TODO: Why addrCopy?
     callInfo := NewCallInfo(caller.Address(), addrCopy, input, CallTypeCall, snapshot)
     evm.callStackInfo = append(evm.callStackInfo, callInfo)
     ret, err = evm.interpreter.SpawnRun(contract, input, false)
@@ -314,7 +311,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 
 	if isPrecompile {
-    //TODO: Can this call stack info
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -328,8 +324,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			// The depth-check is already done, and precompiles handled above
 			contract := NewContract(caller, AccountRef(addrCopy), value, gas)
 			contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
-      //TODO: Do for all other call types
-      //TODO: Why addrCopy?
       callInfo := NewCallInfo(caller.Address(), addrCopy, input, CallTypeCall, snapshot)
       evm.callStackInfo = append(evm.callStackInfo, callInfo)
 			ret, err = evm.interpreter.Run(contract, input, false)
@@ -352,8 +346,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
       break
     }
 
-    // TODO: Do i need to handle gas any particular way?
-    //       store contract object in coroutine?
     ret, err = evm.CallResume(&coroutine)
   }
 

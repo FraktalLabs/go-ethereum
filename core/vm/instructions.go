@@ -693,7 +693,6 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
 
   //TODO: Do for other call types
   if err == errYieldToken {
-    // TODO: gas, return data, ...
     return ret, err
   }
 
@@ -844,7 +843,6 @@ func opChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
     scope.PushCoroutine(newCoroutine)
     receiveCoroutine := channel.ReceiveQueue[0]
     channel.ReceiveQueue = channel.ReceiveQueue[1:]
-    //TODO: Setup receiveCoroutine to run w/ value ( maybe add receiveCoroutine to front of main queue then errStopToken) 
     receiveCoroutine.Stack.push(&value)
     scope.CoroutineQueue = append([]Coroutine{receiveCoroutine}, scope.CoroutineQueue...)
     return nil, errStopToken
@@ -885,7 +883,6 @@ func opXChanSend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 }
 
 func opChanRecv(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-  //TODO: Receive data from channel & push to stack
   channelIdx := scope.Stack.pop()
   channel := &scope.Channels[channelIdx.Uint64()] // TODO: Check if channel exists first
 

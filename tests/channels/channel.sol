@@ -27,7 +27,7 @@ contract ChannelTest {
   }
 
   function main() external {
-  //  //TODO: also add = new channel(3)
+    //TODO: also add = new channel(3)
     channel msgChannel = chancreate(3);
 
     spawn worker(msgChannel);

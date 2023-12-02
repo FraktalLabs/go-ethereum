@@ -1040,83 +1040,83 @@ func newFrontierInstructionSet() JumpTable {
 		},
     CHANCREATE: {
       execute:     opChanCreate,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 1),
-      maxStack:    maxStack(1, 1), // TODO
+      maxStack:    maxStack(1, 1),
     },
     CHANSEND: {
       execute:     opChanSend,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(2, 0),
       maxStack:    maxStack(2, 0),
     },
     CHANRECV: {
       execute:     opChanRecv,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 1),
-      maxStack:    maxStack(1, 1), // TODO
+      maxStack:    maxStack(1, 1),
     },
     XCHANCREATE: {
       execute:     opXChanCreate,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 1),
-      maxStack:    maxStack(1, 1), // TODO
+      maxStack:    maxStack(1, 1),
     },
     XCHANSEND: {
       execute:     opXChanSend,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(2, 0),
       maxStack:    maxStack(2, 0),
     },
     XCHANRECV: {
       execute:     opXChanRecv,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 1),
-      maxStack:    maxStack(1, 1), // TODO
+      maxStack:    maxStack(1, 1),
     },
     SPAWN: {
       execute:     opSpawn,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 0),
       maxStack:    maxStack(1, 0),
     },
     XSPAWN: {
       execute:     opXspawn,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(1, 0),
       maxStack:    maxStack(1, 0),
     },
     XSPAWNCALL: {
       execute:     opXspawnc,
-      constantGas: GasSlowStep, // TODO
-      dynamicGas:  gasCall, //TODO
+      constantGas: GasSlowStep,
+      dynamicGas:  gasCall,
 			minStack:    minStack(7, 1),
 			maxStack:    maxStack(7, 1),
       //TODO: memorySize:  memoryCall,
     },
     SPAWNSTOP: {
       execute:     opSpawnstop,
-      constantGas: GasSlowStep, // TODO
+      constantGas: GasSlowStep,
       minStack:    minStack(0, 0),
       maxStack:    maxStack(0, 0),
     },
     YIELD: {
       execute:     opYield,
-      constantGas: 1, //TODO: set this to something reasonable
+      constantGas: 1,
       minStack:    minStack(0, 0),
       maxStack:    maxStack(0, 0),
     },
     XYIELD: {
       execute:     opXyield,
-      constantGas: 1, //TODO: set this to something reasonable
+      constantGas: 1,
       minStack:    minStack(0, 0),
       maxStack:    maxStack(0, 0),
     },
     CLOG: {
       execute:     opClog,
-      constantGas: 1, //TODO
+      constantGas: 1,
       minStack:    minStack(1, 0),
-      maxStack:    maxStack(1, 0), //TODO: memory size? and take 2 args for full array
+      maxStack:    maxStack(1, 0),
     },
 		RETURN: {
 			execute:    opReturn,
